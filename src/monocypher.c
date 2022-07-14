@@ -53,6 +53,18 @@
 
 #include "monocypher.h"
 
+#if defined(PERIODICALLY_RESET_WATCHDOG)
+    #if defined(__AVR__)
+    #include <avr/wdt.h>
+    #define reset_watchdog() __builtin_avr_wdr()
+    #else
+    #define reset_watchdog()
+    #endif
+#else
+    #define reset_watchdog()
+#endif
+
+
 #ifdef MONOCYPHER_CPP_NAMESPACE
 namespace MONOCYPHER_CPP_NAMESPACE {
 #endif
@@ -2019,6 +2031,9 @@ static void ge_double_scalarmult_vartime(ge *P, const u8 p[32], const u8 b[32])
     ge *sum = P;
     ge_zero(sum);
     while (i >= 0) {
+        #if defined(PERIODICALLY_RESET_WATCHDOG)
+        if(i % 32 == 0) { reset_watchdog(); };
+        #endif
         ge tmp;
         ge_double(sum, sum, &tmp);
         int p_digit = slide_step(&p_slide, P_W_WIDTH, i, p);
